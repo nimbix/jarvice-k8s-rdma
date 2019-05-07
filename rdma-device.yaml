@@ -1,0 +1,21 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: rdma-device-daemonset
+  namespace: kube-system
+spec:
+  template:
+    metadata:
+      labels:
+        - name: rdma-device-ds
+    spec:
+      containers:
+        name: rdma-device-ctr
+        image: gcr.io/jarvice-apps/k8s-rdma-device:1.0
+        volumeMounts:
+          - mountPath: /var/lib/kubelet/device-plugins
+          - name: device-plugin
+      volumes:
+        - name: device-plugin
+          hostPath:
+            path: /var/lib/kubelet/device-plugins
