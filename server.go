@@ -34,12 +34,11 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
 const (
-	resourceName = "jarvice/ibrdma"
+	resourceName = "jarvice.com/rdma"
 	serverSock   = pluginapi.DevicePluginPath + "ibrdma.sock"
 	//envDisableHealthChecks = "DP_DISABLE_HEALTHCHECKS"
 	//allHealthChecks        = "xids"
