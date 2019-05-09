@@ -29,19 +29,18 @@
 package main
 
 import (
-	"google.golang.org/grpc"
-	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
-	"log"
 	"main/rdma"
 	"net"
-	"os"
-	//"path"
 	"time"
+
+	"google.golang.org/grpc"
+
+	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
 const (
-	resourceName = "jarvice/rdma"
-	serverSock   = pluginapi.DevicePluginPath + "rdma.sock"
+	resourceName = "jarvice/ibrdma"
+	serverSock   = pluginapi.DevicePluginPath + "ibrdma.sock"
 	//envDisableHealthChecks = "DP_DISABLE_HEALTHCHECKS"
 	//allHealthChecks        = "xids"
 )
@@ -85,93 +84,93 @@ func dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error
 }
 
 // Start starts the gRPC server of the device plugin
-func (m *RdmaDevicePlugin) Start() error {
-	//err := m.cleanup()
-	//if err != nil {
-	//	return err
-	//}
-
-	sock, err := net.Listen("unix", m.socket)
-	if err != nil {
-		return err
-	}
-
-	m.server = grpc.NewServer([]grpc.ServerOption{}...)
-	pluginapi.RegisterDevicePluginServer(m.server, m)
-
-	go m.server.Serve(sock)
-
-	// Wait for server to start by launching a blocking connexion
-	conn, err := dial(m.socket, 5*time.Second)
-	if err != nil {
-		return err
-	}
-	conn.Close()
-
-	//go m.healthcheck()
-
-	return nil
-}
+//func (m *RdmaDevicePlugin) Start() error {
+//	//err := m.cleanup()
+//	//if err != nil {
+//	//	return err
+//	//}
+//
+//	sock, err := net.Listen("unix", m.socket)
+//	if err != nil {
+//		return err
+//	}
+//
+//	m.server = grpc.NewServer([]grpc.ServerOption{}...)
+//	pluginapi.RegisterDevicePluginServer(m.server, m)
+//
+//	go m.server.Serve(sock)
+//
+//	// Wait for server to start by launching a blocking connexion
+//	conn, err := dial(m.socket, 5*time.Second)
+//	if err != nil {
+//		return err
+//	}
+//	conn.Close()
+//
+//	//go m.healthcheck()
+//
+//	return nil
+//}
 
 // Serve starts the gRPC server and register the device plugin to Kubelet
-func (m *RdmaDevicePlugin) Serve() error {
-	err := m.Start()
-	if err != nil {
-		log.Printf("Could not start device plugin: %s", err)
-		return err
-	}
-	log.Println("Starting to serve on", m.socket)
-
-	err = m.Register(pluginapi.KubeletSocket, resourceName)
-	if err != nil {
-		log.Printf("Could not register device plugin: %s", err)
-		m.Stop()
-		return err
-	}
-	log.Println("Registered device plugin with Kubelet")
-
-	return nil
-}
-
-func (m *RdmaDevicePlugin) cleanup() error {
-	if err := os.Remove(m.socket); err != nil && !os.IsNotExist(err) {
-		return err
-	}
-
-	return nil
-}
+//func (m *RdmaDevicePlugin) Serve() error {
+//	err := m.Start()
+//	if err != nil {
+//		log.Printf("Could not start device plugin: %s", err)
+//		return err
+//	}
+//	log.Println("Starting to serve on", m.socket)
+//
+//	err = m.Register(pluginapi.KubeletSocket, resourceName)
+//	if err != nil {
+//		log.Printf("Could not register device plugin: %s", err)
+//		m.Stop()
+//		return err
+//	}
+//	log.Println("Registered device plugin with Kubelet")
+//
+//	return nil
+//}
+//
+//func (m *RdmaDevicePlugin) cleanup() error {
+//	if err := os.Remove(m.socket); err != nil && !os.IsNotExist(err) {
+//		return err
+//	}
+//
+//	return nil
+//}
 
 // Stop stops the gRPC server
-func (m *RdmaDevicePlugin) Stop() error {
-	if m.server == nil {
-		return nil
-	}
-
-	m.server.Stop()
-	m.server = nil
-	close(m.stop)
-
-	return m.cleanup()
-}
-
-// Register registers the device plugin for the given resourceName with Kubelet.
-func (m *RdmaDevicePlugin) Register(kubeletEndpoint, resourceName string) error {
-	conn, err := dial(kubeletEndpoint, 5*time.Second)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	//client := pluginapi.NewRegistrationClient(conn)
-	//reqt := &pluginapi.RegisterRequest{
-	//	Version:      pluginapi.Version,
-	//	Endpoint:     path.Base(m.socket),
-	//	ResourceName: resourceName,
-	//}
-
-	//_, err = client.Register(context.Background(), reqt)
-	//if err != nil {
-	//	return err
-	//}
-	return nil
-}
+//func (m *RdmaDevicePlugin) Stop() error {
+//	if m.server == nil {
+//		return nil
+//	}
+//
+//	m.server.Stop()
+//	m.server = nil
+//	close(m.stop)
+//
+//	return m.cleanup()
+//}
+//
+//// Register registers the device plugin for the given resourceName with Kubelet.
+//func (m *RdmaDevicePlugin) Register(kubeletEndpoint, resourceName string) error {
+//	conn, err := dial(kubeletEndpoint, 5*time.Second)
+//	if err != nil {
+//		return err
+//	}
+//	defer conn.Close()
+//
+//	client := pluginapi.NewRegistrationClient(conn)
+//	reqt := &pluginapi.RegisterRequest{
+//		Version:      pluginapi.Version,
+//		Endpoint:     path.Base(m.socket),
+//		ResourceName: resourceName,
+//	}
+//
+//	_, err = client.Register(context.Background(), reqt)
+//	if err != nil {
+//		return err
+//	}
+//	return nil
+//}

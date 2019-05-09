@@ -25,20 +25,39 @@
 // The views and conclusions contained in the software and documentation are
 // those of the authors and should not be interpreted as representing official
 // policies, either expressed or implied, of Nimbix, Inc.
-package rdma
+package sysutl
 
 import (
-	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
+	"os"
 	"testing"
 )
 
-//func TestNewRdmaDevicePlugin(t *testing.T) {
-//	println("testing RDMA new")
-//}
+func TestExecCommandLs(t *testing.T) {
 
-func TestGetDevices(t *testing.T) {
-	println("testing device poking with the command line")
+	var dirToRun = "/tmp/"
+	t.Logf("running ls in : %v", dirToRun)
+	var err = os.Chdir(dirToRun)
+	if err != nil {
+		panic(err)
+	}
 
-	var devs []*pluginapi.Device
-	devs = GetDevices()
+	var cmdName = "ls"
+	cout, cerr := ExecCommand(cmdName, "-al")
+	if cerr != nil {
+		t.Error(cerr)
+		t.Fail()
+	}
+	t.Logf("test output: %v", cout.String())
+}
+
+func TestExecCommandIbstat(t *testing.T) {
+	t.Log("Testing ibstat")
+
+	var cmdName = "ibstat"
+	cout, cerr := ExecCommand(cmdName)
+	if cerr != nil {
+		t.Error(cerr)
+		t.FailNow()
+	}
+	t.Logf("test output: %v", cout.String())
 }

@@ -25,20 +25,41 @@
 // The views and conclusions contained in the software and documentation are
 // those of the authors and should not be interpreted as representing official
 // policies, either expressed or implied, of Nimbix, Inc.
-package rdma
+package sysutl
 
 import (
-	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
-	"testing"
+	"bytes"
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"os/signal"
 )
 
-//func TestNewRdmaDevicePlugin(t *testing.T) {
-//	println("testing RDMA new")
-//}
+// Catch all signals for relaying to app
+func SignalWatcher(sigs ...os.Signal) chan os.Signal {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, sigs...)
 
-func TestGetDevices(t *testing.T) {
-	println("testing device poking with the command line")
+	return sigChan
+}
 
-	var devs []*pluginapi.Device
-	devs = GetDevices()
+// Run a system command, return output and error
+func ExecCommand(cmdName string, arg ...string) (bytes.Buffer, error) {
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+
+	// Create the command with args
+	cmd := exec.Command(cmdName, arg...)
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	// Run the command, wait for it to finish
+	err := cmd.Run()
+	if err != nil {
+		log.Print("CMD: " + cmdName + ": " + fmt.Sprint(err) + ": " + stderr.String())
+	}
+
+	return stdout, err
 }

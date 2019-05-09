@@ -33,26 +33,64 @@ package main
 import (
 	"log"
 	"main/rdma"
+	"main/sysutl"
+	"syscall"
 )
 
 func main() {
 
 	log.Println("Starting RDMA plugin")
 
-	log.Println("Fetching devices")
-	if len(rdma.GetDevices()) == 0 {
-		log.Println("No devices found. Waiting indefinitely.")
-		select {}
+	//log.Println("Try a command")
+	//out, err := sysutl.ExecCommand("ls", "/tmp")
+	//if err != nil {
+	//	log.Fatal("failed command")
+	//}
+	//log.Printf("ls /tmp output: \n\n%v\n", out.String())
+
+	log.Println("look for /dev/infiniband files")
+	ibfiles := rdma.GetIBFileList()
+	if ibfiles.Len() == 0 {
+		log.Fatal("no IB files found")
+	} else {
+		log.Print(ibfiles)
 	}
 
+	log.Println("Fetching devices")
+	if len(rdma.GetDevices()) == 0 {
+		log.Println("No devices found...waiting indefinitely")
+		//select {}
+	}
+
+	log.Println("Starting signal handler")
+	sigs := sysutl.SignalWatcher(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
 	restart := true
-	var devicePlugin *RdmaDevicePlugin
-	devicePlugin = NewRdmaDevicePlugin()
-	if err := devicePlugin.Serve(); err != nil {
-		log.Println("Could not contact Kubelet, retrying. Did you enable the device plugin feature gate?")
-		log.Printf("You can check the prerequisites at: https://github.com/NVIDIA/k8s-device-plugin#prerequisites")
-		log.Printf("You can learn how to set the runtime at: https://github.com/NVIDIA/k8s-device-plugin#quick-start")
-	} else {
-		restart = false
+	//var devicePlugin *RdmaDevicePlugin
+
+LOOP:
+	for {
+		if restart {
+			//devicePlugin = NewRdmaDevicePlugin()
+			//if err := devicePlugin.Serve(); err != nil {
+			//	log.Println("Could not contact Kubelet, retrying. Did you enable the device plugin feature gate?")
+			//} else {
+			//	restart = false
+			//}
+		}
+
+		// Respond to events
+		select {
+		case s := <-sigs:
+			switch s {
+			case syscall.SIGHUP:
+				log.Println("Received SIGHUP, restarting")
+				restart = true
+			default:
+				log.Printf("Received signal \"%v\", shutting down", s)
+				//devicePlugin.Stop()
+				break LOOP
+			}
+		}
 	}
 }
