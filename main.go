@@ -50,10 +50,12 @@ func main() {
 
 	log.Println("look for /dev/infiniband files")
 	ibfiles, err := rdma.GetIBFileList()
-	if ibfiles.Len() == 0 {
+	if err != nil {
 		log.Fatalf("no IB files found: %v", err)
 	} else {
-		log.Printf("IB files: \n%v\n", ibfiles.String())
+		for _, file := range ibfiles {
+			log.Println(file.Name())
+		}
 	}
 
 	log.Println("Fetching devices")

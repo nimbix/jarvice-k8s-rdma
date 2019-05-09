@@ -30,9 +30,9 @@
 package rdma
 
 import (
-	"bytes"
+	"io/ioutil"
 	"log"
-	"main/sysutl"
+	"os"
 
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
@@ -45,18 +45,16 @@ const IBRdmaDevicePath = "/dev/infiniband"
 //	}
 //}
 
-func GetIBFileList() (bytes.Buffer, error) {
+func GetIBFileList() ([]os.FileInfo, error) {
 	log.Print("Grabbing simple list of device files")
 
-	var devlist bytes.Buffer
-
 	// Call ls on the /dev/infiniband/ directory
-	devlist, err := sysutl.ExecCommand("ls", IBRdmaDevicePath)
+	files, err := ioutil.ReadDir(IBRdmaDevicePath)
 	if err != nil {
 		log.Printf("failed fetching Infiniband device files: %v", err)
 	}
 
-	return devlist, err
+	return files, err
 }
 
 // Get all the Infiniband devices
