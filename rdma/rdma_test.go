@@ -40,7 +40,7 @@ func TestGetIBFileList(t *testing.T) {
 	if err != nil {
 		t.Errorf("List failed: %v", err)
 	} else {
-		t.Logf("List returned: %v", list.String())
+		t.Logf("List returned: %v", list)
 	}
 }
 

@@ -38,15 +38,7 @@ import (
 )
 
 func main() {
-
 	log.Println("Starting RDMA plugin")
-
-	//log.Println("Try a command")
-	//out, err := sysutl.ExecCommand("ls", "/tmp")
-	//if err != nil {
-	//	log.Fatal("failed command")
-	//}
-	//log.Printf("ls /tmp output: \n\n%v\n", out.String())
 
 	log.Println("look for /dev/infiniband files")
 	ibfiles, err := rdma.GetIBFileList()
