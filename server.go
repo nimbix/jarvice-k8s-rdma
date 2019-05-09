@@ -29,12 +29,9 @@
 package main
 
 import (
-	"main/rdma"
-	"net"
-	"time"
-
 	"google.golang.org/grpc"
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
+	"main/rdma"
 )
 
 const (
@@ -66,21 +63,88 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 	}
 }
 
+// Allocate returns the list of devices to expose in the container
+// NB: must NOT allocate if devices have already been allocated on the node: TODO
+//func (m *RdmaDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+//	devs := m.devs
+//	responses := pluginapi.AllocateResponse{}
+//	var devicesList []*pluginapi.DeviceSpec
+//	var knemDeviceName string = "/dev/knem"
+//
+//	for _, req := range r.ContainerRequests {
+//		response := pluginapi.ContainerAllocateResponse{}
+//
+//		log.Debugf("Request IDs: %v", req.DevicesIDs)
+//
+//		for _, id := range req.DevicesIDs {
+//			if !deviceExists(devs, id) {
+//				return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
+//			}
+//
+//			var devPath string
+//			if dev, ok := m.devices[id]; ok {
+//				// TODO: to function
+//				devPath = fmt.Sprintf("/dev/infiniband/%s", dev.RdmaDevice.DevName)
+//				log.Debugf("device path found: %v", devPath)
+//			} else {
+//				continue
+//			}
+//
+//			ds := &pluginapi.DeviceSpec{
+//				ContainerPath: devPath,
+//				HostPath:      devPath,
+//				Permissions:   "rw",
+//			}
+//			devicesList = append(devicesList, ds)
+//		}
+//		log.Debugf("Devices list from DevicesIDs: %v", devicesList)
+//
+//		// for /dev/infiniband/rdma_cm
+//		rdma_cm_paths := []string{
+//			"/dev/infiniband/rdma_cm",
+//		}
+//		for _, dev := range rdma_cm_paths {
+//			devicesList = append(devicesList, &pluginapi.DeviceSpec{
+//				ContainerPath: dev,
+//				HostPath:      dev,
+//				Permissions:   "rw",
+//			})
+//		}
+//
+//		// MPI (Intel at least) also requires the use of /dev/knem, add if present
+//		if _, err := os.Stat(knemSysfsName); err == nil {
+//			// Add the device to the list to mount in the container
+//			devicesList = append(devicesList, &pluginapi.DeviceSpec{
+//				ContainerPath: knemDeviceName,
+//				HostPath:      knemDeviceName,
+//				Permissions:   "rw",
+//			})
+//		}
+//		log.Debugf("Devices list after manual additions: %v", devicesList)
+//
+//		response.Devices = devicesList
+//
+//		responses.ContainerResponses = append(responses.ContainerResponses, &response)
+//	}
+//
+//	return &responses, nil
+//}
+
 // dial establishes the gRPC communication with the registered device plugin.
-func dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error) {
-	c, err := grpc.Dial(unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
-		grpc.WithTimeout(timeout),
-		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
-			return net.DialTimeout("unix", addr, timeout)
-		}),
-	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
-}
+//func dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error) {
+//	c, err := grpc.Dial(unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
+//		grpc.WithTimeout(timeout),
+//		grpc.WithDialer(func(addr string, timeout time.Duration) (net.Conn, error) {
+//			return net.DialTimeout("unix", addr, timeout)
+//		}),
+//	)
+//
+//	if err != nil {
+//		return nil, err
+//	}
+//
+//	return c, nil
+//}
 
 // Start starts the gRPC server of the device plugin
 //func (m *RdmaDevicePlugin) Start() error {

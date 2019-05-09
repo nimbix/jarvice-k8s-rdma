@@ -39,13 +39,13 @@ import (
 
 const IBRdmaDevicePath = "/dev/infiniband"
 
-func check(err error) {
-	if err != nil {
-		log.Panicln("Fatal:", err)
-	}
-}
+//func check(err error) {
+//	if err != nil {
+//		log.Panicln("Fatal:", err)
+//	}
+//}
 
-func GetIBFileList() bytes.Buffer {
+func GetIBFileList() (bytes.Buffer, error) {
 	log.Print("Grabbing simple list of device files")
 
 	var devlist bytes.Buffer
@@ -56,7 +56,7 @@ func GetIBFileList() bytes.Buffer {
 		log.Printf("failed fetching Infiniband device files: %v", err)
 	}
 
-	return devlist
+	return devlist, err
 }
 
 // Get all the Infiniband devices

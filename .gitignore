@@ -3,6 +3,7 @@ _obj
 _test
 
 _testmain.go
+main
 
 # jetbrains idea
 .idea

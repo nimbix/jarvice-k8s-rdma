@@ -49,9 +49,9 @@ func main() {
 	//log.Printf("ls /tmp output: \n\n%v\n", out.String())
 
 	log.Println("look for /dev/infiniband files")
-	ibfiles := rdma.GetIBFileList()
+	ibfiles, err := rdma.GetIBFileList()
 	if ibfiles.Len() == 0 {
-		log.Fatal("no IB files found")
+		log.Fatalf("no IB files found: %v", err)
 	} else {
 		log.Print(ibfiles)
 	}
