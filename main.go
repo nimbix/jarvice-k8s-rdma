@@ -53,7 +53,7 @@ func main() {
 	if ibfiles.Len() == 0 {
 		log.Fatalf("no IB files found: %v", err)
 	} else {
-		log.Print(ibfiles)
+		log.Printf("IB files: \n%v\n", ibfiles.String())
 	}
 
 	log.Println("Fetching devices")
