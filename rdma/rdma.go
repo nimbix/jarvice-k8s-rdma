@@ -40,7 +40,7 @@ import (
 const (
 	IBDevicePath = "/dev/infiniband/"
 	//IBDevicePath = "/tmp/" TESTING local only
-	IBCMDevice = IBDevicePath + "rdma_cm"
+	IBCMDevicePath = IBDevicePath + "rdma_cm"
 )
 
 type IBDevice struct {
@@ -81,7 +81,7 @@ func GetDevices() []*pluginapi.Device {
 	var devs []*pluginapi.Device
 	//var devList []IBDevice
 
-	if _, err := os.Stat(IBCMDevice); err == nil {
+	if _, err := os.Stat(IBCMDevicePath); err == nil {
 		log.Println("RDMA rdma_cm device exists")
 	} else {
 		log.Fatal("No RMDA devices")
@@ -104,29 +104,12 @@ func GetDevices() []*pluginapi.Device {
 			Name: file.Name(),
 			Path: IBDevicePath + file.Name(),
 		}
-		//devs = append(device)
+		// add the IB device to the expected plugin devices, these will be passed to kubelet
 		devs = append(devs, &pluginapi.Device{
 			ID:     device.Name,
 			Health: pluginapi.Healthy,
 		})
 	}
-
-	//var n uint = 10
-
-	//look for rdma_cm presence
-
-	//grab all the uverbs*
-
-	//optionally find /dev/knem
-
-	//for i := uint(0); i < n; i++ {
-	//	d, err := nvml.NewDeviceLite(i)
-	//	check(err)
-	//	devs = append(devs, &pluginapi.Device{
-	//		ID:     d.UUID,
-	//		Health: pluginapi.Healthy,
-	//	})
-	//}
 
 	return devs
 }

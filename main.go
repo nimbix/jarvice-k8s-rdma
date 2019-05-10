@@ -47,6 +47,7 @@ func main() {
 	} else {
 		for _, file := range ibfiles {
 			log.Println(file.Name())
+			log.Println()
 		}
 	}
 
@@ -66,12 +67,12 @@ LOOP:
 	for {
 		if restart {
 			devicePlugin = NewRDMADevicePlugin()
-			log.Print(devicePlugin)
-			//if err := devicePlugin.Serve(); err != nil {
-			//	log.Println("Could not contact Kubelet, retrying. Did you enable the device plugin feature gate?")
-			//} else {
-			//	restart = false
-			//}
+			log.Print("devices in devicePlugin: ", devicePlugin.devs)
+			if err := devicePlugin.Serve(); err != nil {
+				log.Println("Could not contact Kubelet, retrying. Did you enable the device plugin feature gate?")
+			} else {
+				restart = false
+			}
 		}
 
 		// Respond to events
