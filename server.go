@@ -36,13 +36,13 @@ import (
 
 const (
 	resourceName = "jarvice.com/rdma"
-	serverSock   = pluginapi.DevicePluginPath + "ibrdma.sock"
+	serverSock   = pluginapi.DevicePluginPath + "rdma.sock"
 	//envDisableHealthChecks = "DP_DISABLE_HEALTHCHECKS"
 	//allHealthChecks        = "xids"
 )
 
-// RdmaDevicePlugin implements the Kubernetes device plugin API
-type RdmaDevicePlugin struct {
+// RDMADevicePlugin implements the Kubernetes device plugin API
+type RDMADevicePlugin struct {
 	devs   []*pluginapi.Device
 	socket string
 
@@ -52,9 +52,9 @@ type RdmaDevicePlugin struct {
 	server *grpc.Server
 }
 
-// NewRdmaDevicePlugin returns an initialized RdmaDevicePlugin
-func NewRdmaDevicePlugin() *RdmaDevicePlugin {
-	return &RdmaDevicePlugin{
+// NewRDMADevicePlugin returns an initialized RDMADevicePlugin
+func NewRDMADevicePlugin() *RDMADevicePlugin {
+	return &RDMADevicePlugin{
 		devs:   rdma.GetDevices(),
 		socket: serverSock,
 
@@ -64,8 +64,8 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 }
 
 // Allocate returns the list of devices to expose in the container
-// NB: must NOT allocate if devices have already been allocated on the node: TODO
-//func (m *RdmaDevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+// NB: must NOT allocate if devices have already been allocated on the node: TODO ConfigMap?
+//func (m *RDMADevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 //	devs := m.devs
 //	responses := pluginapi.AllocateResponse{}
 //	var devicesList []*pluginapi.DeviceSpec
@@ -147,7 +147,7 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 //}
 
 // Start starts the gRPC server of the device plugin
-//func (m *RdmaDevicePlugin) Start() error {
+//func (m *RDMADevicePlugin) Start() error {
 //	//err := m.cleanup()
 //	//if err != nil {
 //	//	return err
@@ -176,7 +176,7 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 //}
 
 // Serve starts the gRPC server and register the device plugin to Kubelet
-//func (m *RdmaDevicePlugin) Serve() error {
+//func (m *RDMADevicePlugin) Serve() error {
 //	err := m.Start()
 //	if err != nil {
 //		log.Printf("Could not start device plugin: %s", err)
@@ -195,7 +195,7 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 //	return nil
 //}
 //
-//func (m *RdmaDevicePlugin) cleanup() error {
+//func (m *RDMADevicePlugin) cleanup() error {
 //	if err := os.Remove(m.socket); err != nil && !os.IsNotExist(err) {
 //		return err
 //	}
@@ -204,7 +204,7 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 //}
 
 // Stop stops the gRPC server
-//func (m *RdmaDevicePlugin) Stop() error {
+//func (m *RDMADevicePlugin) Stop() error {
 //	if m.server == nil {
 //		return nil
 //	}
@@ -217,7 +217,7 @@ func NewRdmaDevicePlugin() *RdmaDevicePlugin {
 //}
 //
 //// Register registers the device plugin for the given resourceName with Kubelet.
-//func (m *RdmaDevicePlugin) Register(kubeletEndpoint, resourceName string) error {
+//func (m *RDMADevicePlugin) Register(kubeletEndpoint, resourceName string) error {
 //	conn, err := dial(kubeletEndpoint, 5*time.Second)
 //	if err != nil {
 //		return err

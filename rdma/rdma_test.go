@@ -29,6 +29,8 @@ package rdma
 
 import (
 	"testing"
+
+	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
 //func TestNewRdmaDevicePlugin(t *testing.T) {
@@ -40,13 +42,16 @@ func TestGetIBFileList(t *testing.T) {
 	if err != nil {
 		t.Errorf("List failed: %v", err)
 	} else {
-		t.Logf("List returned: %v", list)
+		for _, file := range list {
+			t.Logf("List returned: %v", file.Name())
+		}
 	}
 }
 
 func TestGetDevices(t *testing.T) {
 	println("testing device poking with the command line")
 
-	//var devs []*pluginapi.Device
-	//devs = GetDevices()
+	var devs []*pluginapi.Device
+	devs = GetDevices()
+	t.Log(devs)
 }

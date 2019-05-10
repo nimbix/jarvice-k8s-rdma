@@ -1,4 +1,4 @@
-FROM golang:1.11-stretch as build
+FROM golang:1.11.5 as build
 
 WORKDIR /go/jarvice-k8s-rdma-device-plugin
 COPY . .

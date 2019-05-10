@@ -40,7 +40,7 @@ import (
 func main() {
 	log.Println("Starting RDMA plugin")
 
-	log.Println("look for /dev/infiniband files")
+	log.Println("look for Infiniband device files")
 	ibfiles, err := rdma.GetIBFileList()
 	if err != nil {
 		log.Fatalf("no IB files found: %v", err)
@@ -60,12 +60,13 @@ func main() {
 	sigs := sysutl.SignalWatcher(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	restart := true
-	//var devicePlugin *RdmaDevicePlugin
+	var devicePlugin *RDMADevicePlugin
 
 LOOP:
 	for {
 		if restart {
-			//devicePlugin = NewRdmaDevicePlugin()
+			devicePlugin = NewRDMADevicePlugin()
+			log.Print(devicePlugin)
 			//if err := devicePlugin.Serve(); err != nil {
 			//	log.Println("Could not contact Kubelet, retrying. Did you enable the device plugin feature gate?")
 			//} else {

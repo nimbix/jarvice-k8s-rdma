@@ -37,7 +37,16 @@ import (
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
-const IBRdmaDevicePath = "/dev/infiniband"
+const (
+	IBDevicePath = "/dev/infiniband/"
+	//IBDevicePath = "/tmp/" TESTING local only
+	IBCMDevice = IBDevicePath + "rdma_cm"
+)
+
+type IBDevice struct {
+	Name string
+	Path string
+}
 
 //func check(err error) {
 //	if err != nil {
@@ -45,19 +54,7 @@ const IBRdmaDevicePath = "/dev/infiniband"
 //	}
 //}
 
-func GetIBFileList() ([]os.FileInfo, error) {
-	log.Print("Grabbing simple list of device files")
-
-	// Call ls on the /dev/infiniband/ directory
-	files, err := ioutil.ReadDir(IBRdmaDevicePath)
-	if err != nil {
-		log.Printf("failed fetching Infiniband device files: %v", err)
-	}
-
-	return files, err
-}
-
-// Get all the Infiniband devices
+// Return all the device files
 //
 // $ ll /dev/infiniband/
 // drwxr-xr-x  2 root root      140 Feb 25 13:21 ./
@@ -67,12 +64,61 @@ func GetIBFileList() ([]os.FileInfo, error) {
 // crw-rw-rw-  1 root root 231, 224 Feb 25 13:21 ucm0
 // crw-------  1 root root 231,   0 Feb 25 13:21 umad0
 // crw-rw-rw-  1 root root 231, 192 Feb 25 13:21 uverbs0
+func GetIBFileList() ([]os.FileInfo, error) {
+	log.Print("Getting list of device files from: ", IBDevicePath)
+
+	// Call ls on the /dev/infiniband/ directory
+	files, err := ioutil.ReadDir(IBDevicePath)
+	if err != nil {
+		log.Printf("failed getting Infiniband device files: %v", err)
+	}
+
+	return files, err
+}
+
+// Get all the Infiniband devices from the files
 func GetDevices() []*pluginapi.Device {
+	var devs []*pluginapi.Device
+	//var devList []IBDevice
+
+	if _, err := os.Stat(IBCMDevice); err == nil {
+		log.Println("RDMA rdma_cm device exists")
+	} else {
+		log.Fatal("No RMDA devices")
+	}
 	//n, err := nvml.GetDeviceCount()
 	//check(err)
 
+	// Get the list of device files
+	files, err := GetIBFileList()
+	if err != nil {
+		log.Fatal("No RDMA devices")
+		return nil
+	}
+
+	//for i := int(0); i < len(files); i++ {
+
+	// for each device, make a local device and append that plugin device type
+	for _, file := range files {
+		device := IBDevice{
+			Name: file.Name(),
+			Path: IBDevicePath + file.Name(),
+		}
+		//devs = append(device)
+		devs = append(devs, &pluginapi.Device{
+			ID:     device.Name,
+			Health: pluginapi.Healthy,
+		})
+	}
+
 	//var n uint = 10
-	var devs []*pluginapi.Device
+
+	//look for rdma_cm presence
+
+	//grab all the uverbs*
+
+	//optionally find /dev/knem
+
 	//for i := uint(0); i < n; i++ {
 	//	d, err := nvml.NewDeviceLite(i)
 	//	check(err)
