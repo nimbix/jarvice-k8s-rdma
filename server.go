@@ -71,14 +71,48 @@ func NewRDMADevicePlugin() *RDMADevicePlugin {
 	}
 }
 
-func deviceExists(devray []*pluginapi.Device, id string) bool {
-	for _, dev := range devray {
-		if dev.ID == id {
-			return true
+func (rcvr *RDMADevicePlugin) cleanup() error {
+	if err := os.Remove(rcvr.socket); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+
+	return nil
+}
+
+func (rcvr *RDMADevicePlugin) healthcheck() {
+
+	//ctx, cancel := context.WithCancel(context.Background())
+	_, cancel := context.WithCancel(context.Background())
+
+	//var xids chan *pluginapi.Device
+	//if !strings.Contains(disableHealthChecks, "xids") {
+	//	xids = make(chan *pluginapi.Device)
+	//	go watchXIDs(ctx, rcvr.devs, xids)
+	//}
+
+	for {
+		select {
+		case <-rcvr.stop:
+			cancel()
+			return
+			//case dev := <-xids:
+			//	rcvr.unhealthy(dev)
 		}
 	}
-	return false
 }
+
+func (rcvr *RDMADevicePlugin) unhealthy(dev *pluginapi.Device) {
+	rcvr.health <- dev
+}
+
+// AllocateResponse includes the artifacts that needs to be injected into
+// a container for accessing 'deviceIDs' that were mentioned as part of
+// 'AllocateRequest'.
+// Failure Handling:
+// if Kubelet sends an allocation request for dev1 and dev2.
+// Allocation on dev1 succeeds but allocation on dev2 fails.
+// The Device plugin should send a ListAndWatch update and fail the
+// Allocation request
 
 // Allocate returns the list of devices to expose in the container, ie AllocateOnce...
 // NB: must NOT allocate if devices have already been allocated on the node: TODO ConfigMap?
@@ -97,7 +131,7 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, r *pluginapi.Allocat
 		log.Printf("Allocate() called: Request IDs: %v", req.DevicesIDs)
 
 		for _, id := range req.DevicesIDs {
-			if !deviceExists(devs, id) {
+			if !rdma.DeviceExists(devs, id) {
 				return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
 			} else {
 				log.Printf("device: %s", id)
@@ -167,7 +201,7 @@ func dial(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn, error
 	return c, nil
 }
 
-// Start starts the gRPC server of the device plugin
+// Start creates the gRPC server of the device plugin and starts the server
 func (rcvr *RDMADevicePlugin) Start() error {
 	err := rcvr.cleanup()
 	if err != nil {
@@ -182,6 +216,7 @@ func (rcvr *RDMADevicePlugin) Start() error {
 	rcvr.server = grpc.NewServer([]grpc.ServerOption{}...)
 	pluginapi.RegisterDevicePluginServer(rcvr.server, rcvr)
 
+	// needs an error channel
 	go rcvr.server.Serve(sock)
 
 	// Wait for server to start by launching a blocking connexion
@@ -200,7 +235,7 @@ func (rcvr *RDMADevicePlugin) Start() error {
 	return nil
 }
 
-// Serve starts the gRPC server and register the device plugin to Kubelet
+// Serve runs the gRPC server and register the device plugin to Kubelet
 func (rcvr *RDMADevicePlugin) Serve() error {
 	err := rcvr.Start()
 	if err != nil {
@@ -216,14 +251,6 @@ func (rcvr *RDMADevicePlugin) Serve() error {
 		return err
 	}
 	log.Println("Registered device plugin with Kubelet")
-
-	return nil
-}
-
-func (rcvr *RDMADevicePlugin) cleanup() error {
-	if err := os.Remove(rcvr.socket); err != nil && !os.IsNotExist(err) {
-		return err
-	}
 
 	return nil
 }
@@ -264,7 +291,7 @@ func (rcvr *RDMADevicePlugin) Register(kubeletEndpoint, resourceName string) err
 }
 
 func (rcvr *RDMADevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi.Empty) (*pluginapi.DevicePluginOptions, error) {
-	panic("implement me")
+	return &pluginapi.DevicePluginOptions{}, nil
 }
 
 func (rcvr *RDMADevicePlugin) ListAndWatch(*pluginapi.Empty, pluginapi.DevicePlugin_ListAndWatchServer) error {

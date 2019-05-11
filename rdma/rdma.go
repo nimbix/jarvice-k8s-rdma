@@ -34,6 +34,8 @@ import (
 	"log"
 	"os"
 
+	//"golang.org/x/net/context"
+
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
@@ -114,37 +116,22 @@ func GetDevices() []*pluginapi.Device {
 	return devs
 }
 
-//func GetDevices() ([]Device, error) {
-//	var devs []Device
-//	// Get all RDMA device list
-//	ibvDevList, err := ibverbs.IbvGetDeviceList()
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	netDevList, err := GetAllNetDevice()
-//	if err != nil {
-//		return nil, err
-//	}
-//	for _, d := range ibvDevList {
-//		for _, n := range netDevList {
-//			dResource, err := getRdmaDeviceResoure(d.Name)
-//			if err != nil {
-//				continue
-//			}
-//			nResource, err := getNetDeviceResoure(n)
-//			if err != nil {
-//				continue
-//			}
-//
-//			// the same device
-//			if bytes.Compare(dResource, nResource) == 0 {
-//				devs = append(devs, Device{
-//					RdmaDevice: d,
-//					NetDevice:  n,
-//				})
-//			}
+func DeviceExists(devray []*pluginapi.Device, id string) bool {
+	for _, dev := range devray {
+		if dev.ID == id {
+			return true
+		}
+	}
+	return false
+}
+
+//func watchXIDs(ctx context.Context, devs []*pluginapi.Device, xids chan<- *pluginapi.Device) {
+//	for {
+//		select {
+//		case <-ctx.Done():
+//			return
 //		}
+//
+//		// TODO: check RDMA device healthy status
 //	}
-//	return devs, nil
 //}

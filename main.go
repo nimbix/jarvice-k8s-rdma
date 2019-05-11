@@ -69,7 +69,7 @@ LOOP:
 			devicePlugin = NewRDMADevicePlugin()
 			log.Print("devices in devicePlugin: ", devicePlugin.devs)
 			if err := devicePlugin.Serve(); err != nil {
-				log.Println("Could not contact Kubelet, retrying. Did you enable the device plugin feature gate?")
+				log.Println("Could not contact Kubelet, retrying...")
 			} else {
 				restart = false
 			}
