@@ -294,10 +294,28 @@ func (rcvr *RDMADevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi
 	return &pluginapi.DevicePluginOptions{}, nil
 }
 
-func (rcvr *RDMADevicePlugin) ListAndWatch(*pluginapi.Empty, pluginapi.DevicePlugin_ListAndWatchServer) error {
-	panic("implement me")
+// ListAndWatch lists devices and update that list according to the health status
+// ListAndWatch returns a stream of List of Devices
+// Whenever a Device state change or a Device disapears, ListAndWatch
+// returns the new list
+func (rcvr *RDMADevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
+	s.Send(&pluginapi.ListAndWatchResponse{Devices: rcvr.devs})
+
+	for {
+		select {
+		case <-rcvr.stop:
+			return nil
+		case d := <-rcvr.health:
+			// FIXME: there is no way to recover from the Unhealthy state.
+			d.Health = pluginapi.Unhealthy
+			s.Send(&pluginapi.ListAndWatchResponse{Devices: rcvr.devs})
+		}
+	}
 }
 
+// PreStartContainer is called, if indicated by Device Plugin during registration phase,
+// before each container start. Device plugin can run device specific operations
+// such as resetting the device before making devices available to the container
 func (rcvr *RDMADevicePlugin) PreStartContainer(context.Context, *pluginapi.PreStartContainerRequest) (*pluginapi.PreStartContainerResponse, error) {
-	panic("implement me")
+	return &pluginapi.PreStartContainerResponse{}, nil
 }
