@@ -33,6 +33,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	//"golang.org/x/net/context"
 
@@ -42,19 +43,29 @@ import (
 const (
 	IBDevicePath = "/dev/infiniband/"
 	//IBDevicePath = "/tmp/" TESTING local only
-	IBCMDevicePath = IBDevicePath + "rdma_cm"
+	IBCMDevicePrefix   = "rdma_cm"
+	IBVerbDevicePrefix = "uverb"
+	IBCMDevicePath     = IBDevicePath + IBCMDevicePrefix
 )
 
+// Simple type using the name as the ID, possibly have to pull the GUID out for uniqueness
 type IBDevice struct {
 	Name string
 	Path string
 }
 
-//func check(err error) {
-//	if err != nil {
-//		log.Panicln("Fatal:", err)
-//	}
-//}
+// Match the device name from a device path
+// e.g. /dev/infiniband/uverbs1 with a substring of uverb
+func validDevicePrefix(path string) bool {
+	prefixes := []string{IBCMDevicePrefix, IBVerbDevicePrefix}
+	match := false
+	for _, sub := range prefixes {
+		if strings.Contains(path, sub) {
+			match = true
+		}
+	}
+	return match
+}
 
 // Return all the device files
 //
@@ -81,36 +92,34 @@ func GetIBFileList() ([]os.FileInfo, error) {
 // Get all the Infiniband devices from the files
 func GetDevices() []*pluginapi.Device {
 	var devs []*pluginapi.Device
-	//var devList []IBDevice
 
-	if _, err := os.Stat(IBCMDevicePath); err == nil {
-		log.Println("RDMA rdma_cm device exists")
-	} else {
-		log.Fatal("No RMDA devices")
-	}
-	//n, err := nvml.GetDeviceCount()
-	//check(err)
+	//if _, err := os.Stat(IBCMDevicePath); err == nil {
+	//	log.Println("RDMA rdma_cm device exists")
+	//} else {
+	//	log.Fatal("No RMDA devices")
+	//}
 
 	// Get the list of device files
 	files, err := GetIBFileList()
 	if err != nil {
-		log.Fatal("No RDMA devices")
+		log.Fatal("No RDMA devices found on node")
 		return nil
 	}
 
-	//for i := int(0); i < len(files); i++ {
-
 	// for each device, make a local device and append that plugin device type
+	//   only append devices we want: uverbs and rdma_cm
 	for _, file := range files {
-		device := IBDevice{
-			Name: file.Name(),
-			Path: IBDevicePath + file.Name(),
+		if validDevicePrefix(file.Name()) {
+			device := IBDevice{
+				Name: file.Name(),
+				Path: IBDevicePath + file.Name(),
+			}
+			// add the IB device to the expected plugin devices, these will be passed to kubelet
+			devs = append(devs, &pluginapi.Device{
+				ID:     device.Name,
+				Health: pluginapi.Healthy,
+			})
 		}
-		// add the IB device to the expected plugin devices, these will be passed to kubelet
-		devs = append(devs, &pluginapi.Device{
-			ID:     device.Name,
-			Health: pluginapi.Healthy,
-		})
 	}
 
 	return devs

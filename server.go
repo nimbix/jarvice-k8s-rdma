@@ -26,6 +26,8 @@
 // those of the authors and should not be interpreted as representing official
 // policies, either expressed or implied, of Nimbix, Inc.
 
+// NB: comments from api.pb.go in the k8s source included to clarify API calls
+
 package main
 
 import (
@@ -51,8 +53,9 @@ const (
 
 // RDMADevicePlugin implements the Kubernetes device plugin API
 type RDMADevicePlugin struct {
-	devs   []*pluginapi.Device
-	socket string
+	devs    []*pluginapi.Device
+	socket  string
+	devices map[string]rdma.IBDevice
 
 	stop   chan interface{}
 	health chan *pluginapi.Device
@@ -130,6 +133,19 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, r *pluginapi.Allocat
 
 		log.Printf("Allocate() called: Request IDs: %v", req.DevicesIDs)
 
+		// for /dev/infiniband/rdma_cm, must exist of Allocate is failed
+		if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
+			devicesList = append(devicesList, &pluginapi.DeviceSpec{
+				ContainerPath: rdma.IBCMDevicePath,
+				HostPath:      rdma.IBCMDevicePath,
+				Permissions:   "rw",
+			})
+		} else {
+			log.Println("No rdma_cm device found, failing Allocate")
+			devicesList = nil
+			return nil, err
+		}
+
 		for _, id := range req.DevicesIDs {
 			if !rdma.DeviceExists(devs, id) {
 				return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
@@ -137,32 +153,23 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, r *pluginapi.Allocat
 				log.Printf("device: %s", id)
 			}
 
-			//var devPath string
-			//if dev, ok := rcvr.devices[id]; ok {
-			//	// TODO: to function
-			//	devPath = fmt.Sprintf("/dev/infiniband/%s", dev.RdmaDevice.DevName)
-			//	log.Printf("device path found: %v", devPath)
-			//} else {
-			//	continue
-			//}
+			var devPath string
+			if dev, ok := rcvr.devices[id]; ok {
+				// TODO: to function
+				devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)
+				log.Printf("device path found: %v", devPath)
+			} else {
+				continue
+			}
 
-			//ds := &pluginapi.DeviceSpec{
-			//	ContainerPath: devPath,
-			//	HostPath:      devPath,
-			//	Permissions:   "rw",
-			//}
-			//devicesList = append(devicesList, ds)
+			ds := &pluginapi.DeviceSpec{
+				ContainerPath: devPath,
+				HostPath:      devPath,
+				Permissions:   "rw",
+			}
+			devicesList = append(devicesList, ds)
 		}
 		log.Printf("Devices list from DevicesIDs: %v", devicesList)
-
-		// for /dev/infiniband/rdma_cm
-		if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
-			devicesList = append(devicesList, &pluginapi.DeviceSpec{
-				ContainerPath: rdma.IBCMDevicePath,
-				HostPath:      rdma.IBCMDevicePath,
-				Permissions:   "rw",
-			})
-		}
 
 		// MPI (Intel at least) also requires the use of /dev/knem, add if present
 		if _, err := os.Stat(knemDevicePath); err == nil {
@@ -230,7 +237,7 @@ func (rcvr *RDMADevicePlugin) Start() error {
 		return err
 	}
 
-	//go rcvr.healthcheck()
+	go rcvr.healthcheck()
 
 	return nil
 }
@@ -296,7 +303,7 @@ func (rcvr *RDMADevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi
 
 // ListAndWatch lists devices and update that list according to the health status
 // ListAndWatch returns a stream of List of Devices
-// Whenever a Device state change or a Device disapears, ListAndWatch
+// Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (rcvr *RDMADevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
 	s.Send(&pluginapi.ListAndWatchResponse{Devices: rcvr.devs})
