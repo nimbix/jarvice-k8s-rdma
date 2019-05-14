@@ -35,14 +35,12 @@ import (
 	"os"
 	"strings"
 
-	//"golang.org/x/net/context"
-
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
 const (
 	IBDevicePath = "/dev/infiniband/"
-	//IBDevicePath = "/tmp/" TESTING local only
+	//IBDevicePath = "/tmp/" //TESTING local only
 	IBCMDevicePrefix   = "rdma_cm"
 	IBVerbDevicePrefix = "uverb"
 	IBCMDevicePath     = IBDevicePath + IBCMDevicePrefix
@@ -90,8 +88,10 @@ func GetIBFileList() ([]os.FileInfo, error) {
 }
 
 // Get all the Infiniband devices from the files
-func GetDevices() []*pluginapi.Device {
-	var devs []*pluginapi.Device
+//func GetDevices() []*pluginapi.Device {
+func GetDevices() []IBDevice {
+	//var devs []*pluginapi.Device
+	var devs []IBDevice
 
 	//if _, err := os.Stat(IBCMDevicePath); err == nil {
 	//	log.Println("RDMA rdma_cm device exists")
@@ -106,21 +106,30 @@ func GetDevices() []*pluginapi.Device {
 		return nil
 	}
 
-	// for each device, make a local device and append that plugin device type
+	// for each IB device file, make a local device type
 	//   only append devices we want: uverbs and rdma_cm
 	for _, file := range files {
 		if validDevicePrefix(file.Name()) {
-			device := IBDevice{
+			devs = append(devs, IBDevice{
 				Name: file.Name(),
 				Path: IBDevicePath + file.Name(),
-			}
-			// add the IB device to the expected plugin devices, these will be passed to kubelet
-			devs = append(devs, &pluginapi.Device{
-				ID:     device.Name,
-				Health: pluginapi.Healthy,
 			})
 		}
 	}
+
+	//for _, file := range files {
+	//	if validDevicePrefix(file.Name()) {
+	//		device := IBDevice{
+	//			Name: file.Name(),
+	//			Path: IBDevicePath + file.Name(),
+	//		}
+	//		// add the IB device to the expected plugin devices, these will be passed to kubelet
+	//		devs = append(devs, &pluginapi.Device{
+	//			ID:     device.Name,
+	//			Health: pluginapi.Healthy,
+	//		})
+	//	}
+	//}
 
 	return devs
 }

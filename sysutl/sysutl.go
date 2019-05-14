@@ -30,6 +30,7 @@ package sysutl
 import (
 	"bytes"
 	"fmt"
+	"github.com/fsnotify/fsnotify"
 	"log"
 	"os"
 	"os/exec"
@@ -42,6 +43,24 @@ func SignalWatcher(sigs ...os.Signal) chan os.Signal {
 	signal.Notify(sigChan, sigs...)
 
 	return sigChan
+}
+
+// Watch a directory for changed files
+func FSWatcher(files ...string) (*fsnotify.Watcher, error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, f := range files {
+		err = watcher.Add(f)
+		if err != nil {
+			_ = watcher.Close()
+			return nil, err
+		}
+	}
+
+	return watcher, nil
 }
 
 // Run a system command, return output and error

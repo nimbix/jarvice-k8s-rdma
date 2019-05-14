@@ -47,8 +47,6 @@ const (
 	resourceName   = "jarvice.com/rdma"
 	serverSock     = pluginapi.DevicePluginPath + "rdma.sock"
 	knemDevicePath = "/dev/knem"
-	//envDisableHealthChecks = "DP_DISABLE_HEALTHCHECKS"
-	//allHealthChecks        = "xids"
 )
 
 // RDMADevicePlugin implements the Kubernetes device plugin API
@@ -65,9 +63,29 @@ type RDMADevicePlugin struct {
 
 // NewRDMADevicePlugin returns an initialized RDMADevicePlugin
 func NewRDMADevicePlugin() *RDMADevicePlugin {
+	devices := rdma.GetDevices()
+	if devices == nil {
+		log.Print("Error getting RDMA devices")
+		return nil
+	}
+
+	// Make a map of IB device files to an ID, just the name
+	var devs []*pluginapi.Device
+	ibdevmap := make(map[string]rdma.IBDevice)
+	for _, device := range devices {
+		id := device.Name
+		devs = append(devs, &pluginapi.Device{
+			ID:     id,
+			Health: pluginapi.Healthy,
+		})
+		ibdevmap[id] = device
+	}
+	log.Printf("device map for new RDMA plugin object: %v", ibdevmap)
+
 	return &RDMADevicePlugin{
-		devs:   rdma.GetDevices(),
-		socket: serverSock,
+		devs:    devs,
+		socket:  serverSock,
+		devices: ibdevmap,
 
 		stop:   make(chan interface{}),
 		health: make(chan *pluginapi.Device),
@@ -82,6 +100,7 @@ func (rcvr *RDMADevicePlugin) cleanup() error {
 	return nil
 }
 
+// Needs to be implemented using some check with ibstat/ibstatus call to card(s)
 func (rcvr *RDMADevicePlugin) healthcheck() {
 
 	//ctx, cancel := context.WithCancel(context.Background())
@@ -118,34 +137,36 @@ func (rcvr *RDMADevicePlugin) unhealthy(dev *pluginapi.Device) {
 // Allocation request
 
 // Allocate returns the list of devices to expose in the container, ie AllocateOnce...
-// NB: must NOT allocate if devices have already been allocated on the node: TODO ConfigMap?
+// NB: must NOT allocate if devices have already been allocated on the node: ConfigMap?
 //  look for rdma_cm presence
 //  grab all the uverbs*
 //  optionally find /dev/knem
-// TODO: list of devices to allow: uverbs, rdma_cm, knem
-func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, r *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
+func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	devs := rcvr.devs
 	responses := pluginapi.AllocateResponse{}
 	var devicesList []*pluginapi.DeviceSpec
 
-	for _, req := range r.ContainerRequests {
+	for _, req := range reqs.ContainerRequests {
 		response := pluginapi.ContainerAllocateResponse{}
 
 		log.Printf("Allocate() called: Request IDs: %v", req.DevicesIDs)
 
 		// for /dev/infiniband/rdma_cm, must exist of Allocate is failed
-		if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
-			devicesList = append(devicesList, &pluginapi.DeviceSpec{
-				ContainerPath: rdma.IBCMDevicePath,
-				HostPath:      rdma.IBCMDevicePath,
-				Permissions:   "rw",
-			})
-		} else {
+		//if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
+		//	devicesList = append(devicesList, &pluginapi.DeviceSpec{
+		//		ContainerPath: rdma.IBCMDevicePath,
+		//		HostPath:      rdma.IBCMDevicePath,
+		//		Permissions:   "rw",
+		//	})
+		if _, err := os.Stat(rdma.IBCMDevicePath); err != nil {
 			log.Println("No rdma_cm device found, failing Allocate")
 			devicesList = nil
 			return nil, err
 		}
+		log.Printf("Devices list after rdma_cm check: %v", devicesList)
 
+		// kubelet requests the devices it was told of at registration, now build the device file paths
+		// and DeviceSpec for mounting the device file paths into the pod container
 		for _, id := range req.DevicesIDs {
 			if !rdma.DeviceExists(devs, id) {
 				return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
@@ -155,13 +176,13 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, r *pluginapi.Allocat
 
 			var devPath string
 			if dev, ok := rcvr.devices[id]; ok {
-				// TODO: to function
 				devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)
-				log.Printf("device path found: %v", devPath)
+				log.Printf("IB device path found: %v", devPath)
 			} else {
 				continue
 			}
 
+			// DeviveSpec has the paths for mounting the files into a container
 			ds := &pluginapi.DeviceSpec{
 				ContainerPath: devPath,
 				HostPath:      devPath,

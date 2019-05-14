@@ -31,10 +31,14 @@
 package main
 
 import (
+	"github.com/fsnotify/fsnotify"
 	"log"
 	"main/rdma"
 	"main/sysutl"
+	"os"
 	"syscall"
+
+	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
 func main() {
@@ -47,15 +51,23 @@ func main() {
 	} else {
 		for _, file := range ibfiles {
 			log.Println(file.Name())
-			log.Println()
 		}
+		log.Println()
 	}
 
 	log.Println("Fetching devices")
 	if len(rdma.GetDevices()) == 0 {
 		log.Println("No devices found...waiting indefinitely")
-		//select {}
+		//select {} TODO: uncomment for release
 	}
+
+	log.Println("Starting FS watcher.")
+	watcher, err := sysutl.FSWatcher(pluginapi.DevicePluginPath)
+	if err != nil {
+		log.Println("Failed to created FS watcher.")
+		os.Exit(1)
+	}
+	defer watcher.Close()
 
 	log.Println("Starting signal handler")
 	sigs := sysutl.SignalWatcher(syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -77,6 +89,15 @@ LOOP:
 
 		// Respond to events
 		select {
+		case event := <-watcher.Events:
+			if event.Name == pluginapi.KubeletSocket && event.Op&fsnotify.Create == fsnotify.Create {
+				log.Printf("notify: %s created, restarting", pluginapi.KubeletSocket)
+				restart = true
+			}
+
+		case err := <-watcher.Errors:
+			log.Printf("notify: %s", err)
+
 		case s := <-sigs:
 			switch s {
 			case syscall.SIGHUP:
@@ -84,7 +105,7 @@ LOOP:
 				restart = true
 			default:
 				log.Printf("Received signal \"%v\", shutting down", s)
-				//devicePlugin.Stop()
+				_ = devicePlugin.Stop()
 				break LOOP
 			}
 		}

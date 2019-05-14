@@ -1,15 +1,18 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: pod1
+  name: ibpod
 spec:
   restartPolicy: OnFailure
+  tolerations:
+    - key:  node-role.kubernetes.io/jarvice-compute
+      operator: Exists
+      effect: NoSchedule
   containers:
-    - image: gcr.io/jarvice-apps/k8s-rdma-device:1.0
-      name: pod1-ctr
-      command: ["sleep"]
-      args: ["100000"]
-
+    - image: ubuntu:18.04
+      name: ibpod-ctr
+      command: ["/bin/bash"]
+      args: ["-c", "sleep 999"]
       resources:
         limits:
-          jarvice/ibrdma-device: 1
+          jarvice.com/rdma: 1
