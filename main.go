@@ -61,10 +61,10 @@ func main() {
 		//select {} TODO: uncomment for release
 	}
 
-	log.Println("Starting FS watcher.")
+	log.Printf("Starting FS watcher for: %v", pluginapi.DevicePluginPath)
 	watcher, err := sysutl.FSWatcher(pluginapi.DevicePluginPath)
 	if err != nil {
-		log.Println("Failed to created FS watcher.")
+		log.Println("Failed to created FS watcher")
 		os.Exit(1)
 	}
 	defer watcher.Close()
@@ -79,9 +79,9 @@ LOOP:
 	for {
 		if restart {
 			devicePlugin = NewRDMADevicePlugin()
-			log.Print("devices in devicePlugin: ", devicePlugin.devs)
+			log.Print("devices in devicePlugin: ", devicePlugin.devices)
 			if err := devicePlugin.Serve(); err != nil {
-				log.Println("Could not contact Kubelet, retrying...")
+				log.Println("Could not contact kubelet, retrying...")
 			} else {
 				restart = false
 			}

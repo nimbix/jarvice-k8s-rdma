@@ -34,8 +34,6 @@ import (
 	"log"
 	"os"
 	"strings"
-
-	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
 )
 
 const (
@@ -134,14 +132,18 @@ func GetDevices() []IBDevice {
 	return devs
 }
 
-func DeviceExists(devray []*pluginapi.Device, id string) bool {
-	for _, dev := range devray {
-		if dev.ID == id {
-			return true
-		}
-	}
-	return false
-}
+//func DeviceExists(devray []*pluginapi.Device, id string) bool {
+// for the plugin device, pull the rdma_cm file and verify it exists
+//func DeviceExists(devray *pluginapi.Device, id string) bool {
+//
+//	devray.
+//	//for _, dev := range devray.ID {
+//	//	if dev.ID == id {
+//	//		return true
+//	//	}
+//	//}
+//	return false
+//}
 
 //func watchXIDs(ctx context.Context, devs []*pluginapi.Device, xids chan<- *pluginapi.Device) {
 //	for {

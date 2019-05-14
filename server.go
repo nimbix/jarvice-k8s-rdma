@@ -32,6 +32,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	pluginapi "k8s.io/kubernetes/pkg/kubelet/apis/deviceplugin/v1beta1"
@@ -51,9 +52,10 @@ const (
 
 // RDMADevicePlugin implements the Kubernetes device plugin API
 type RDMADevicePlugin struct {
-	devs    []*pluginapi.Device
-	socket  string
-	devices map[string]rdma.IBDevice
+	//devs    []*pluginapi.Device
+	plugindev *pluginapi.Device
+	socket    string
+	devices   map[string]rdma.IBDevice
 
 	stop   chan interface{}
 	health chan *pluginapi.Device
@@ -69,23 +71,42 @@ func NewRDMADevicePlugin() *RDMADevicePlugin {
 		return nil
 	}
 
-	// Make a map of IB device files to an ID, just the name
-	var devs []*pluginapi.Device
+	// generate a UUID as the ID for the plugin device
+	pluginuuid, err := uuid.NewUUID()
+	if err != nil {
+		log.Println("Unable to generate a UUID for the plugin device")
+		return nil
+	}
+	log.Println("New plugin UUID: ", pluginuuid.String())
+
+	// Make a map of IB device files to an ID, a UUID
+	//var devs []*pluginapi.Device
+	//ibdevmap := make(map[string]rdma.IBDevice)
+	//for _, device := range devices {
+	//	id := device.Name
+	//	devs = append(devs, &pluginapi.Device{
+	//		ID:     id,
+	//		Health: pluginapi.Healthy,
+	//	})
+	//	ibdevmap[id] = device
+	//}
+	var plugindev *pluginapi.Device
 	ibdevmap := make(map[string]rdma.IBDevice)
 	for _, device := range devices {
 		id := device.Name
-		devs = append(devs, &pluginapi.Device{
-			ID:     id,
-			Health: pluginapi.Healthy,
-		})
 		ibdevmap[id] = device
 	}
 	log.Printf("device map for new RDMA plugin object: %v", ibdevmap)
 
+	plugindev = &pluginapi.Device{
+		ID:     pluginuuid.String(),
+		Health: pluginapi.Healthy,
+	}
+
 	return &RDMADevicePlugin{
-		devs:    devs,
-		socket:  serverSock,
-		devices: ibdevmap,
+		plugindev: plugindev,
+		socket:    serverSock,
+		devices:   ibdevmap,
 
 		stop:   make(chan interface{}),
 		health: make(chan *pluginapi.Device),
@@ -138,11 +159,12 @@ func (rcvr *RDMADevicePlugin) unhealthy(dev *pluginapi.Device) {
 
 // Allocate returns the list of devices to expose in the container, ie AllocateOnce...
 // NB: must NOT allocate if devices have already been allocated on the node: ConfigMap?
+// only return 1 k8s plugin api device: allocate ALL IB devices at once, all cards, all device files
 //  look for rdma_cm presence
 //  grab all the uverbs*
 //  optionally find /dev/knem
 func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
-	devs := rcvr.devs
+	//dev := rcvr.plugindev
 	responses := pluginapi.AllocateResponse{}
 	var devicesList []*pluginapi.DeviceSpec
 
@@ -165,14 +187,14 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 		}
 		log.Printf("Devices list after rdma_cm check: %v", devicesList)
 
-		// kubelet requests the devices it was told of at registration, now build the device file paths
+		// kubelet requests the devices (1) it was told of at registration, now build the device file paths
 		// and DeviceSpec for mounting the device file paths into the pod container
 		for _, id := range req.DevicesIDs {
-			if !rdma.DeviceExists(devs, id) {
-				return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
-			} else {
-				log.Printf("device: %s", id)
-			}
+			//if !rdma.DeviceExists(dev, id) {
+			//	return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
+			//} else {
+			//	log.Printf("device: %s", id)
+			//}
 
 			var devPath string
 			if dev, ok := rcvr.devices[id]; ok {
@@ -327,7 +349,10 @@ func (rcvr *RDMADevicePlugin) GetDevicePluginOptions(context.Context, *pluginapi
 // Whenever a Device state change or a Device disappears, ListAndWatch
 // returns the new list
 func (rcvr *RDMADevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.DevicePlugin_ListAndWatchServer) error {
-	s.Send(&pluginapi.ListAndWatchResponse{Devices: rcvr.devs})
+	var plugindevlist []*pluginapi.Device
+	plugindevlist = append(plugindevlist, rcvr.plugindev)
+
+	s.Send(&pluginapi.ListAndWatchResponse{Devices: plugindevlist})
 
 	for {
 		select {
@@ -336,7 +361,7 @@ func (rcvr *RDMADevicePlugin) ListAndWatch(e *pluginapi.Empty, s pluginapi.Devic
 		case d := <-rcvr.health:
 			// FIXME: there is no way to recover from the Unhealthy state.
 			d.Health = pluginapi.Unhealthy
-			s.Send(&pluginapi.ListAndWatchResponse{Devices: rcvr.devs})
+			s.Send(&pluginapi.ListAndWatchResponse{Devices: plugindevlist})
 		}
 	}
 }
