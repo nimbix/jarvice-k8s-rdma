@@ -79,6 +79,7 @@ LOOP:
 	for {
 		if restart {
 			devicePlugin = NewRDMADevicePlugin()
+			log.Print("new devicePlugin ID: ", devicePlugin.plugindev.ID)
 			log.Print("devices in devicePlugin: ", devicePlugin.devices)
 			if err := devicePlugin.Serve(); err != nil {
 				log.Println("Could not contact kubelet, retrying...")
