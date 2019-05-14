@@ -185,11 +185,12 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 			devicesList = nil
 			return nil, err
 		}
-		log.Printf("Devices list after rdma_cm check: %v", devicesList)
+		log.Printf("Devices list after rdma_cm check: %v", devicesList) // empty with above commented out
 
 		// kubelet requests the devices (1) it was told of at registration, now build the device file paths
 		// and DeviceSpec for mounting the device file paths into the pod container
 		for _, id := range req.DevicesIDs {
+			log.Print("DeviceID: ", id)
 			//if !rdma.DeviceExists(dev, id) {
 			//	return nil, fmt.Errorf("invalid allocation request: unknown device: %s", id)
 			//} else {
@@ -197,20 +198,27 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 			//}
 
 			var devPath string
-			if dev, ok := rcvr.devices[id]; ok {
-				devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)
-				log.Printf("IB device path found: %v", devPath)
-			} else {
-				continue
-			}
+			//if dev, ok := rcvr.devices[id]; ok {
+			//	devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)
+			//	log.Printf("IB device path found: %v", devPath)
+			//} else {
+			//	continue
+			//}
 
-			// DeviveSpec has the paths for mounting the files into a container
-			ds := &pluginapi.DeviceSpec{
-				ContainerPath: devPath,
-				HostPath:      devPath,
-				Permissions:   "rw",
+			for key := range rcvr.devices {
+				if dev, ok := rcvr.devices[key]; ok {
+					devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)
+					log.Printf("IB device path found: %v", devPath)
+				}
+
+				// DeviceSpec has the paths for mounting the files into a container
+				ds := &pluginapi.DeviceSpec{
+					ContainerPath: devPath,
+					HostPath:      devPath,
+					Permissions:   "rw",
+				}
+				devicesList = append(devicesList, ds)
 			}
-			devicesList = append(devicesList, ds)
 		}
 		log.Printf("Devices list from DevicesIDs: %v", devicesList)
 

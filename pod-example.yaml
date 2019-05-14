@@ -9,7 +9,7 @@ spec:
       operator: Exists
       effect: NoSchedule
   containers:
-    - image: ubuntu:18.04
+    - image: ubuntu:xenial
       name: ibpod-ctr
       command: ["/bin/bash"]
       args: ["-c", "sleep 999"]

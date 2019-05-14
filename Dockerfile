@@ -5,9 +5,11 @@ COPY . .
 
 RUN go build -o jarvice-ibrdma-plugin .
 
-FROM ubuntu:bionic
+FROM ubuntu:xenial
 
 COPY --from=build /go/jarvice-k8s-rdma-device-plugin /usr/local/bin
+
+# ibstat is in infiniband-diags
 RUN apt-get -y update && \
     apt-get -y install libibverbs1 libmlx4-1 libmlx5-1 ibutils ibverbs-utils perftest && \
     apt-get clean
