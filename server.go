@@ -173,19 +173,11 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 
 		log.Printf("Allocate() called: Request IDs: %v", req.DevicesIDs)
 
-		// for /dev/infiniband/rdma_cm, must exist of Allocate is failed
-		//if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
-		//	devicesList = append(devicesList, &pluginapi.DeviceSpec{
-		//		ContainerPath: rdma.IBCMDevicePath,
-		//		HostPath:      rdma.IBCMDevicePath,
-		//		Permissions:   "rw",
-		//	})
 		if _, err := os.Stat(rdma.IBCMDevicePath); err != nil {
 			log.Println("No rdma_cm device found, failing Allocate")
 			devicesList = nil
 			return nil, err
 		}
-		log.Printf("Devices list after rdma_cm check: %v", devicesList) // empty with above commented out
 
 		// kubelet requests the devices (1) it was told of at registration, now build the device file paths
 		// and DeviceSpec for mounting the device file paths into the pod container
@@ -198,13 +190,6 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 			//}
 
 			var devPath string
-			//if dev, ok := rcvr.devices[id]; ok {
-			//	devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)
-			//	log.Printf("IB device path found: %v", devPath)
-			//} else {
-			//	continue
-			//}
-
 			for key := range rcvr.devices {
 				if dev, ok := rcvr.devices[key]; ok {
 					devPath = fmt.Sprintf("/dev/infiniband/%s", dev.Name)

@@ -86,16 +86,8 @@ func GetIBFileList() ([]os.FileInfo, error) {
 }
 
 // Get all the Infiniband devices from the files
-//func GetDevices() []*pluginapi.Device {
 func GetDevices() []IBDevice {
-	//var devs []*pluginapi.Device
 	var devs []IBDevice
-
-	//if _, err := os.Stat(IBCMDevicePath); err == nil {
-	//	log.Println("RDMA rdma_cm device exists")
-	//} else {
-	//	log.Fatal("No RMDA devices")
-	//}
 
 	// Get the list of device files
 	files, err := GetIBFileList()
@@ -114,20 +106,6 @@ func GetDevices() []IBDevice {
 			})
 		}
 	}
-
-	//for _, file := range files {
-	//	if validDevicePrefix(file.Name()) {
-	//		device := IBDevice{
-	//			Name: file.Name(),
-	//			Path: IBDevicePath + file.Name(),
-	//		}
-	//		// add the IB device to the expected plugin devices, these will be passed to kubelet
-	//		devs = append(devs, &pluginapi.Device{
-	//			ID:     device.Name,
-	//			Health: pluginapi.Healthy,
-	//		})
-	//	}
-	//}
 
 	return devs
 }

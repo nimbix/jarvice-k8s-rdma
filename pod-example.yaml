@@ -13,6 +13,33 @@ spec:
       name: ibpod-ctr
       command: ["/bin/bash"]
       args: ["-c", "sleep 999"]
+      securityContext:
+        capabilities:
+          add:
+            - IPC_LOCK
+      resources:
+        limits:
+          jarvice.com/rdma: 1
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: ibpod2
+spec:
+  restartPolicy: OnFailure
+  tolerations:
+    - key:  node-role.kubernetes.io/jarvice-compute
+      operator: Exists
+      effect: NoSchedule
+  containers:
+    - image: ubuntu:xenial
+      name: ibpod-ctr2
+      command: ["/bin/bash"]
+      args: ["-c", "sleep 999"]
+      securityContext:
+        capabilities:
+          add:
+            - IPC_LOCK
       resources:
         limits:
           jarvice.com/rdma: 1

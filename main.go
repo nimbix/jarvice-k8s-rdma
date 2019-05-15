@@ -59,6 +59,7 @@ func main() {
 	if len(rdma.GetDevices()) == 0 {
 		log.Println("No devices found...waiting indefinitely")
 		//select {} TODO: uncomment for release
+		select {}
 	}
 
 	log.Printf("Starting FS watcher for: %v", pluginapi.DevicePluginPath)
