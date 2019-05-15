@@ -3,15 +3,11 @@ FROM golang:1.12 as build
 WORKDIR /go/jarvice-k8s-rdma-device-plugin
 COPY . .
 
-RUN go build -o jarvice-ibrdma-plugin .
+# statically compile the plugin
+RUN CGO_ENABLED=0 GOOS=linux go build -o jarvice-rdma-plugin -a -ldflags '-extldflags "-static"' .
 
-FROM ubuntu:xenial
+FROM scratch
 
 COPY --from=build /go/jarvice-k8s-rdma-device-plugin /usr/local/bin
 
-# ibstat is in infiniband-diags
-RUN apt-get -y update && \
-    apt-get -y install libibverbs1 libmlx4-1 libmlx5-1 ibutils ibverbs-utils perftest && \
-    apt-get clean
-
-ENTRYPOINT ["jarvice-ibrdma-plugin"]
+ENTRYPOINT ["jarvice-rdma-plugin"]
