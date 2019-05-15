@@ -45,6 +45,8 @@ spec:
               mountPath: /var/lib/kubelet/device-plugins
             - name: devinfiniband
               mountPath: /dev/infiniband
+            - name: devknem
+              mountPath: /dev/knem
       volumes:
         - name: device-plugin
           hostPath:
@@ -52,3 +54,6 @@ spec:
         - name: devinfiniband
           hostPath:
             path: /dev/infiniband
+        - name: devknem
+          hostPath:
+            path: /dev/knem

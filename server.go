@@ -52,7 +52,6 @@ const (
 
 // RDMADevicePlugin implements the Kubernetes device plugin API
 type RDMADevicePlugin struct {
-	//devs    []*pluginapi.Device
 	plugindev *pluginapi.Device
 	socket    string
 	devices   map[string]rdma.IBDevice
