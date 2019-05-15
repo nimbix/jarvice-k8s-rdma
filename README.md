@@ -1,13 +1,12 @@
 # Infiniband RDMA device plugin for Kubernetes on JARVICE
 
 A **Kubernetes** [device plugin](https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/) 
-with a DaemonSet to detect and pass _Infiniband_ (IB) devices to the kubelet, 
+with a DaemonSet to detect and pass _Infiniband_ (IB) devices to requesting pods from the kubelet, 
 used to enable RDMA in containers by presenting the needed IB devices from the host.
 
 Based on work from the [Nimbix fork of k8s-rdma-device-plugin](https://github.com/nimbix/k8s-rdma-device-plugin) 
 and the [NVIDIA reference device plugin](https://github.com/NVIDIA/k8s-device-plugin), this device plugin removes the use
 of the ibverbs library which appears to have issues with mixed software/firmware revisions.
-
 
 ## Infiniband Devices
 The known required devices for RDMA are:
