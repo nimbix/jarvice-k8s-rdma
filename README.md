@@ -19,19 +19,49 @@ Optionally, if present, the [KNEM](http://knem.gforge.inria.fr/) device for Open
 
 ## Contents
 * Device plugin code
-* DaemonSet YAML file
-* 2 pod example YAML file to test RDMA between two pods
+* DaemonSet YAML file for plugin deployment
+* 2-pod example YAML file to test RDMA between two pods
 * Dockerfile and build scripts
 
 ## Kubernetes Deployment
-Deploying the device plugin to each node requires applying the DaemonSet to the chosen namespace
-
+Deploying the device plugin to each node requires applying the DaemonSet to the chosen namespace:
 ```
 $ kubectl -n jarvice-daemonsets apply -f rdma-device.yml
 ```
 
 ### Notes
-Developed with Kubernetes 1.12 but using semantic versioning, not tied to a specific release, 1.10+
+Developed with Kubernetes 1.12 and Go modules, using semantic versioning, not tied to a specific release, 1.10+
+
+Build command (local build):
+```bash
+go build -o jarvice-rdma-plugin .
+```
+
+Build command for a static Linux binary:
+```bash
+CGO_ENABLED=0 GOOS=linux go build -o jarvice-rdma-plugin -a -ldflags '-extldflags "-static"' .
+```
+
+Build Docker image locally:
+```bash
+docker build -t jarvice/k8s-rdma-device:1.0.0 .
+```
+
+Run (privileged) Docker image locally:
+(create mocked */var/lib/kubelet/device-plugins* and */tmp/infiniband* directories, touch a /tmp/infiniband/uverbs0 file)
+```bash
+docker run --security-opt=no-new-privileges --cap-drop=ALL --network=none -it -v /var/lib/kubelet/device-plugins:/var/lib/kubelet/device-plugins -v /tmp/infiniband:/dev/infiniband  jarvice/k8s-rdma-device:1.0.0
+```
+
+Run unit tests for RDMA source:
+```bash
+ go test -v ./rdma/...
+```
+
+Run unit tests for the sysutl source:
+```bash
+ go test -v ./sysutl/...
+```
 
 The plugin is built for x86_64 and ppc64le architectures with Docker manifests.
 
@@ -74,4 +104,5 @@ apt-get clean`
          ---------------------------------------------------------------------------------------
      
 ## TODO
-*
+* health checks, seemingly mostly for hot plug devices
+* update the dial function for newer API
