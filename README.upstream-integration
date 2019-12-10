@@ -40,4 +40,10 @@ https://github.com/hustcat/k8s-rdma-device-plugin/commit/7978cd1d8acfe728ba16072
 And commit:
 https://github.com/hustcat/k8s-rdma-device-plugin/commit/3edb893b681d425335fcabbb31cebb460c4174af
 
-## 
+## Health checks
+
+Still no implementation, needs to use ibstat/ibstatus
+
+### GRPC dial
+
+No changes upstream, not deprecated until 2.x.x
