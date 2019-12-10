@@ -1,0 +1,43 @@
+# Updates from upstream RDMA device plugin and merge potential
+
+The RDMA upstream origin repo https://github.com/hustcat/k8s-rdma-device-plugin gets occasional updates, some from 
+Kubernetes sig-node/device-plugin and the NVIDIA plugin: https://github.com/nvidia/k8s-device-plugin, some from 
+developer contributions like API deprecations
+
+This README details specific changes considered for this divergent fork
+
+## Potential Changes for API conformance
+
+**Kubernetes v1.16 baseline**
+
+* upstream nvidia supports 2 device-plugin sample YAML files
+    * `legacy device plugin (pre 1.16)`
+    * `device plugin (1.16+)`
+* DaemonSet moves to apps/v1
+* Log converted from logrus to klog
+    * we already dropped logrus to use plain log
+
+## Golang modules updates
+
+* Currently using: `k8s.io/kubernetes v1.11.10`
+    * upstream nvidia and rdma use 1.16
+    
+     ```   
+  [[constraint]]
+          name = "k8s.io/kubernetes"
+          version = "1.16.0"
+   ```       
+## NUMA Topology change 
+Citing:
+https://kubernetes.io/docs/concepts/extend-kubernetes/compute-storage-net/device-plugins/#device-plugin-integration-with-the-topology-manager
+
+Performance related, add in `/sys/class/infiniband/%s/device/numa_node` device info
+or is this relevant if we use one card per chassis and the default spreads the processes evenly across all?
+
+Commit:
+https://github.com/hustcat/k8s-rdma-device-plugin/commit/7978cd1d8acfe728ba160728b9523d363bf5478f
+
+And commit:
+https://github.com/hustcat/k8s-rdma-device-plugin/commit/3edb893b681d425335fcabbb31cebb460c4174af
+
+## 
