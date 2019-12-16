@@ -14,6 +14,7 @@ This README details specific changes considered for this divergent fork
     * `legacy device plugin (pre 1.16)`
     * `device plugin (1.16+)`
 * DaemonSet moves to apps/v1
+    * adds selector with matchLabels
 * Log converted from logrus to klog
     * we already dropped logrus to use plain log
 
@@ -44,6 +45,6 @@ https://github.com/hustcat/k8s-rdma-device-plugin/commit/3edb893b681d425335fcabb
 
 Still no implementation, needs to use ibstat/ibstatus
 
-### GRPC dial
+### gRPC dial
 
 No changes upstream, not deprecated until 2.x.x

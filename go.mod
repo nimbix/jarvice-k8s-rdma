@@ -9,5 +9,7 @@ require (
 	golang.org/x/sys v0.0.0-20190312061237-fead79001313 // indirect
 	golang.org/x/text v0.3.1-0.20181227161524-e6919f6577db // indirect
 	google.golang.org/grpc v1.20.1
-	k8s.io/kubernetes v1.11.10
+	k8s.io/kubernetes v1.14.10
 )
+
+go 1.13
