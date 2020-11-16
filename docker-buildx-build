@@ -1,0 +1,18 @@
+#!/bin/bash
+
+[ -n "$1" ] && TAG_VERSION="$1"
+
+REGISTRY=gcr.io
+REPOSITORY=jarvice
+IMAGE=k8s-rdma-device
+PLATFORMS="linux/amd64,linux/ppc64le,linux/arm64"
+
+BUILDER=multiarch
+
+export DOCKER_CLI_EXPERIMENTAL=enabled
+docker buildx build --rm \
+    --builder $BUILDER \
+    --platform $PLATFORMS --push \
+    -t $REGISTRY/$REPOSITORY/$IMAGE:${TAG_VERSION} \
+    -f Dockerfile .
+
