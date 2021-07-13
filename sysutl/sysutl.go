@@ -1,4 +1,4 @@
-// Copyright (c) 2019, Nimbix, Inc.
+// Package sysutl Copyright (c) 2019, Nimbix, Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -37,7 +37,7 @@ import (
 	"os/signal"
 )
 
-// Catch all signals for relaying to app
+// SignalWatcher Catch all signals for relaying to app
 func SignalWatcher(sigs ...os.Signal) chan os.Signal {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, sigs...)
@@ -45,7 +45,7 @@ func SignalWatcher(sigs ...os.Signal) chan os.Signal {
 	return sigChan
 }
 
-// Watch a directory for changed files
+// FSWatcher Watch a directory for changed files
 func FSWatcher(files ...string) (*fsnotify.Watcher, error) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -63,7 +63,7 @@ func FSWatcher(files ...string) (*fsnotify.Watcher, error) {
 	return watcher, nil
 }
 
-// Run a system command, return output and error
+// ExecCommand Run a system command, return output and error
 func ExecCommand(cmdName string, arg ...string) (bytes.Buffer, error) {
 	var stdout bytes.Buffer
 	var stderr bytes.Buffer

@@ -26,7 +26,7 @@
 // those of the authors and should not be interpreted as representing official
 // policies, either expressed or implied, of Nimbix, Inc.
 
-// Separate package for rdma access code, help with tests
+// Package rdma Separate package for rdma access code, help with tests
 package rdma
 
 import (
@@ -44,7 +44,7 @@ const (
 	IBCMDevicePath     = IBDevicePath + IBCMDevicePrefix
 )
 
-// Simple type using the name as the ID, possibly have to pull the GUID out for uniqueness
+// IBDevice Simple type using the name as the ID, possibly have to pull the GUID out for uniqueness
 type IBDevice struct {
 	Name string
 	Path string
@@ -63,7 +63,7 @@ func validDevicePrefix(path string) bool {
 	return match
 }
 
-// Return all the device files
+// GetIBFileList Return all the device files
 //
 // $ ll /dev/infiniband/
 // drwxr-xr-x  2 root root      140 Feb 25 13:21 ./
@@ -85,7 +85,7 @@ func GetIBFileList() ([]os.FileInfo, error) {
 	return files, err
 }
 
-// Get all the Infiniband devices from the files
+// GetDevices Get all the Infiniband devices from the files
 func GetDevices() []IBDevice {
 	var devs []IBDevice
 
