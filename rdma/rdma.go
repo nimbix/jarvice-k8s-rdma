@@ -38,7 +38,7 @@ import (
 
 const (
 	IBDevicePath = "/dev/infiniband/"
-	//IBDevicePath = "/tmp/" //TESTING local only
+	//IBDevicePath = "/tmp/infiniband/" //TESTING local only
 	IBCMDevicePrefix   = "rdma_cm"
 	IBVerbDevicePrefix = "uverb"
 	IBCMDevicePath     = IBDevicePath + IBCMDevicePrefix
