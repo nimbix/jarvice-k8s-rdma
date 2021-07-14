@@ -161,7 +161,7 @@ func (rcvr *RDMADevicePlugin) unhealthy(dev *pluginapi.Device) {
 // only return 1 k8s plugin api device: allocate ALL IB devices at once, all cards, all device files
 //  look for rdma_cm presence, optional
 //  grab all the uverbs*
-//  optionally find /dev/knem
+//  optionally find /dev/knem, ensure this is a character device file
 func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
 	//dev := rcvr.plugindev
 	responses := pluginapi.AllocateResponse{}
@@ -201,14 +201,18 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 		log.Printf("Devices list from DevicesIDs: %v", devicesList)
 
 		// MPI (Intel at least) also requires the use of /dev/knem, add if present
-		if _, err := os.Stat(knemDevicePath); err == nil {
-			// Add the device to the list to mount in the container
-			devicesList = append(devicesList, &pluginapi.DeviceSpec{
-				ContainerPath: knemDevicePath,
-				HostPath:      knemDevicePath,
-				Permissions:   "rw",
-			})
+		if fileStat, err := os.Stat(knemDevicePath); err == nil {
+			if fileStat.Mode() == os.ModeCharDevice {
+				// Add the device to the list to mount in the container
+				devicesList = append(devicesList, &pluginapi.DeviceSpec{
+					ContainerPath: knemDevicePath,
+					HostPath:      knemDevicePath,
+					Permissions:   "rw",
+				})
+			}
 		}
+
+		// Add the rdma_cm device, if found
 		if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
 			// Add the device to the list to mount in the container
 			devicesList = append(devicesList, &pluginapi.DeviceSpec{
