@@ -159,7 +159,7 @@ func (rcvr *RDMADevicePlugin) unhealthy(dev *pluginapi.Device) {
 // Allocate returns the list of devices to expose in the container, ie AllocateOnce...
 // NB: must NOT allocate if devices have already been allocated on the node: ConfigMap?
 // only return 1 k8s plugin api device: allocate ALL IB devices at once, all cards, all device files
-//  look for rdma_cm presence
+//  look for rdma_cm presence, optional
 //  grab all the uverbs*
 //  optionally find /dev/knem
 func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse, error) {
@@ -171,12 +171,6 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 		response := pluginapi.ContainerAllocateResponse{}
 
 		log.Printf("Allocate() called: Request IDs: %v", req.DevicesIDs)
-
-		if _, err := os.Stat(rdma.IBCMDevicePath); err != nil {
-			log.Println("No rdma_cm device found, failing Allocate")
-			devicesList = nil
-			return nil, err
-		}
 
 		// kubelet requests the devices (1) it was told of at registration, now build the device file paths
 		// and DeviceSpec for mounting the device file paths into the pod container
@@ -215,7 +209,15 @@ func (rcvr *RDMADevicePlugin) Allocate(ctx context.Context, reqs *pluginapi.Allo
 				Permissions:   "rw",
 			})
 		}
-		log.Printf("Devices list after manual additions: %v", devicesList)
+		if _, err := os.Stat(rdma.IBCMDevicePath); err == nil {
+			// Add the device to the list to mount in the container
+			devicesList = append(devicesList, &pluginapi.DeviceSpec{
+				ContainerPath: rdma.IBCMDevicePath,
+				HostPath:      rdma.IBCMDevicePath,
+				Permissions:   "rw",
+			})
+		}
+		log.Printf("Devices list after optional additions: %v", devicesList)
 
 		response.Devices = devicesList
 

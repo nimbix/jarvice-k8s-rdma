@@ -15,4 +15,3 @@ docker buildx build --rm \
     --platform $PLATFORMS --push \
     -t $REGISTRY/$REPOSITORY/$IMAGE:${TAG_VERSION} \
     -f Dockerfile .
-

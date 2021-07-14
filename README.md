@@ -10,8 +10,10 @@ of the ibverbs library which appears to have issues with mixed software/firmware
 
 ## Infiniband Devices
 The known required devices for RDMA are:
-* /dev/infiniband/rdma_cm
 * /dev/infiniband/uverbs*
+  
+Optionally:
+* /dev/infiniband/rdma_cm
 
 Optionally, if present, the [KNEM](http://knem.gforge.inria.fr/) device for Open/IBM MPI:
 * /dev/knem
