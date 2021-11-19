@@ -2,8 +2,8 @@
 
 [ -n "$1" ] && TAG_VERSION="$1"
 
-REGISTRY=gcr.io
-REPOSITORY=jarvice
+REGISTRY=us-docker.pkg.dev
+REPOSITORY=jarvice/images
 IMAGE=k8s-rdma-device
 PLATFORMS="linux/amd64,linux/ppc64le,linux/arm64"
 
